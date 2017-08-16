@@ -1,0 +1,40 @@
+<link rel="stylesheet" href="/static/css/style.css">
+<div class="wrapper">
+    <div class='head'></div>
+	<div class="all_content">
+	    <div class="header">
+	        <div class="in_header">
+	    	    <a href="#">my site</a>
+	    	</div>
+	    </div>	
+	<div class="row">
+	    <div class="content">
+		    <div class="in_content">
+			    fdsf
+			</div>
+		</div>
+	    <div class="sidebar">
+		    <div class="in_sidebar">
+			    {% from "_formhelpers.html" import render_field %}
+			    <form method="POST">
+				<dl>
+				        {{ form.hidden_tag() }}
+                        {{ render_field(form.username) }}</br>
+                        {{ render_field(form.password) }}</br>
+                        {{ render_field(form.remember) }}					
+                </dl>					
+				<p><input type="submit" value="Log in">	
+				</form>
+			    <a href="/create_profile">Create profile</a>
+			</div>
+		</div>
+	</div>
+	<div class="footer">
+	    <div class="in_footer">
+               social_network © 2017
+		</div>
+	</div>
+	</div>
+</div>
+
+

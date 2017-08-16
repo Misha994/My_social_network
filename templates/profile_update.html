@@ -1,0 +1,44 @@
+<link rel="stylesheet" href="/static/css/style.css">
+<div class="wrapper">
+    <div class='head'></div>
+	<div class="all_content">
+	    <div class="header">
+	        <div class="in_header">
+	    	    <a href="/profile">my site</a>
+				<a href="/profile">home</a>
+				<a href="/contact">contact</a>
+				<a href="/logout">Exit</a>
+	    	</div>
+	    </div>	
+	<div class="row">
+	    <div class="content">
+		    <div class="in_content">
+                {% from "_formhelpers.html" import render_field %}
+                <form method=post>
+                  <dl>
+				    {{ form.hidden_tag() }}
+                    {{ render_field(form.username) }}
+					{{ render_field(form.email) }}
+	                {{ render_field(form.password) }}
+                  </dl>
+                  <p><input type=submit value=Update>
+                </form>
+				
+			</div>
+		</div>
+	    <div class="profile_sidebar">
+		    <div class="profile_in_sidebar">
+				<img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="259px"/>    
+
+			</div>
+		</div>
+	</div>
+	<div class="footer">
+	    <div class="in_footer">
+               social_network © 2017
+		</div>
+	</div>
+	</div>
+</div>
+
+
