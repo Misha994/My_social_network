@@ -35,6 +35,7 @@ class User(db.Model, UserMixin):
 
 class Profile(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
     city = db.Column(db.String(20), unique=False)
 
     @staticmethod
@@ -52,6 +53,23 @@ class Profile(db.Model, UserMixin):
             return profile
         except Exception:
             return None
+
+class Contact(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, nullable=False, unique=True)
+
+    @staticmethod
+    def create(owner_id, user_id):
+        contact = Contact(owner_id=owner_id,
+                          user_id=user_id)
+        db.session.add(contact)
+        db.session.commit()
+
+    @staticmethod
+    def get(owner_id):
+        contacts = Contact.query.filter_by(owner_id=owner_id)
+        return contacts
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -83,26 +101,23 @@ def create_profile():
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html', user=current_user)
+    profile = Profile.get_by_user_id(current_user.id)
+    contacts = Contact.get(current_user.id)
+    return render_template('profile.html', user=current_user, profile=profile, contacts=contacts)
 
 @app.route('/contact')
 @login_required
 def contact():
     users = User.query.all()
+    contacts = Contact.get(current_user.id)
     users = [user for user in users if not user.id == int(current_user.id)]
-    return render_template('contact.html', users=users)
+    return render_template('contact.html', users=users, contacts=contacts)
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('index'))
-
-@app.route('/info/<user_id>')
-@login_required
-def info(user_id):
-    user = User.get_by_id(user_id)
-    return render_template('info.html',user=user)
 
 @app.route('/profile/update', methods=['GET', 'POST'])
 @login_required
@@ -122,7 +137,31 @@ def user_update():
         db.session.commit()
     return render_template('profile_update.html', form=form)
 
+@app.route('/profile/extend_profile', methods=['GET','POST'])
+@login_required
+def extend_profile():
+    form = ProfileForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        profile = Profile(user_id=current_user.id, city=form.city.data)
+        db.session.add(profile)
+        db.session.commit()
+        return redirect(url_for('profile'))
+    return render_template('extend_profile.html', form=form)
 
+@app.route('/contact/<user_id>')
+@login_required
+def contact_user(user_id):
+    user = User.get_by_id(user_id)
+    profile = Profile.get_by_user_id(user_id)
+    return render_template('profile.html', user=user, profile=profile)
+
+@app.route('/contact/<user_id>/add', methods=['GET'])
+@login_required
+def add_contact(user_id):
+    contact = Contact(owner_id = current_user.id,user_id = user_id)
+    db.session.add(contact)
+    db.session.commit()
+    return redirect('profile')
 
 
 if __name__ == '__main__':

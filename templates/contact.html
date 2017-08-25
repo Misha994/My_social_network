@@ -13,12 +13,15 @@
 	<div class="row">
 	    <div class="content">
 		    <div class="in_content">
-			   {% for user in users %}	    
-               <a href='info/{{ user.id }}'>		     
+			   {% for user in users %}
+			   
+               <a href='contact/{{ user.id }}'>		     
 			   {{ user.username }}</br>
                <img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="100px"/></br>
 			   </a>
-               {% endfor %}
+			   <a href='/contact/{{ user.id }}/add'>add user</a></br>
+			   {% endfor %}
+			   
 			</div>
 		</div>
 	    <div class="profile_sidebar">

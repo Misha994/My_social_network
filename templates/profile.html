@@ -20,11 +20,18 @@
 		    <div class="profile_in_sidebar">
 				<img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="259px"/>    
 			    {{ user.username }}</br>
-				
+				{{ profile.city }}</br>
 			    <a href='/profile/update'>update<a></br>
-				<a href='/profile/profile'>profile<a>
 			</div>
-			
+	    <div class="contact_sidebar">
+		    <div class="contact_in_sidebar">
+				{% for contact in contacts %}
+                    <a href='/contact/{{ contact.user_id }}'>
+					{{ contact.user_id }}
+					</a>
+                {% endfor %}					
+			</div>		
+	
 		</div>
 	</div>
 	<div class="footer">

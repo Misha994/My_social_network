@@ -45,7 +45,7 @@ body {
 }
 
 .in_content {
-	height: 500px;
+	height: 620px;
 	background-color: white;
 	padding: 5px;
 }
@@ -82,5 +82,18 @@ body {
 .profile_in_sidebar {
     height: 500px;
 	background-color: white;
-	padding: 5px
+	padding: 5px;
+}
+
+.contact_sidebar {
+	width: 100%;
+	float: left;
+	padding-top: 10px;
+	padding-right: 0%;
+}
+
+.contact_in_sidebar {
+    height: 100px;
+	background-color: white;
+	padding: 5px;
 }
