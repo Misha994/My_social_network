@@ -4,6 +4,7 @@ from flask import Flask, render_template, redirect, url_for, request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_socketio import SocketIO, emit
 
 from form.loginForm import LoginForm
 from form.registerForm import RegisterForm
@@ -15,6 +16,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'myApp.sqlite')
 db = SQLAlchemy(app)
+socketio = SocketIO(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'index'
@@ -57,7 +59,7 @@ class Profile(db.Model, UserMixin):
 class Contact(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.Integer, nullable=False, unique=True)
+    user_id = db.Column(db.Integer, nullable=False)
 
     @staticmethod
     def create(owner_id, user_id):
@@ -101,16 +103,23 @@ def create_profile():
 @app.route('/profile')
 @login_required
 def profile():
+    users = User.query.all()
     profile = Profile.get_by_user_id(current_user.id)
     contacts = Contact.get(current_user.id)
-    return render_template('profile.html', user=current_user, profile=profile, contacts=contacts)
+    return render_template('profile.html', user=current_user, profile=profile, contacts=contacts, users=users)
 
 @app.route('/contact')
 @login_required
-def contact():
-    users = User.query.all()
+def all_contact():
+    all_users = User.query.all()
     contacts = Contact.get(current_user.id)
-    users = [user for user in users if not user.id == int(current_user.id)]
+    users = []
+    for user in all_users:
+        for contact in contacts:
+            if (user.id == contact.user_id):
+                break
+        else:
+            users.append(user)
     return render_template('contact.html', users=users, contacts=contacts)
 
 @app.route('/logout')
@@ -163,7 +172,26 @@ def add_contact(user_id):
     db.session.commit()
     return redirect('profile')
 
+@app.route('/messages')
+@login_required
+def messages():
+    messages = ['fdfdfd','fdfdfd','fdfdfd']
+    return render_template('messages.html', user=current_user, messages=messages)
+
+def messageRecived():
+  print( 'message was received!!!' )
+
+@socketio.on('message')
+def handleMessage(msg):
+    print('Message: '+ msg)
+    send(msg, boroadcast=true)
+
+@socketio.on( 'my event' )
+def handle_my_custom_event( json ):
+    print( 'recived my event: ' + str( json ))
+    socketio.emit( 'my response', json, callback=messageRecived )
 
 if __name__ == '__main__':
     db.create_all()
+    socketio.run(app, debug=True)
     app.run()

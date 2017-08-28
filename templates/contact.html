@@ -7,21 +7,22 @@
 	    	    <a href="/profile">my site</a>
 				<a href="/profile">home</a>
 				<a href="/contact">contact</a>
+				<a href="/messages">messages</a>
 				<a href="/logout">Exit</a>
 	    	</div>
 	    </div>	
 	<div class="row">
 	    <div class="content">
-		    <div class="in_content">
+		    <div class="in_content">		   
 			   {% for user in users %}
-			   
+			   {% if not user.id == current_user.id%}
                <a href='contact/{{ user.id }}'>		     
 			   {{ user.username }}</br>
-               <img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="100px"/></br>
+               <img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="90px"/></br>
 			   </a>
 			   <a href='/contact/{{ user.id }}/add'>add user</a></br>
+			   {% endif %}
 			   {% endfor %}
-			   
 			</div>
 		</div>
 	    <div class="profile_sidebar">

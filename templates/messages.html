@@ -1,0 +1,80 @@
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="/static/css/style.css">
+  </head>
+<div class="wrapper">
+    <div class='head'></div>
+	<div class="all_content">
+	    <div class="header">
+	        <div class="in_header">
+	    	    <a href="/profile">my site</a>
+				<a href="/profile">home</a>
+				<a href="/contact">contact</a>
+				<a href="/messages">messages</a>
+				<a href="/logout">Exit</a>
+	    	</div>
+	    </div>	
+	<div class="row">
+	    <div class="content">
+		    <div class="in_content">
+			<div class="container">
+          <div class="message_holder"></div>
+                <div class="col-sm-4">
+                  <form action="" method="POST">                    
+                    <div class="clearfix"></div>
+                    <input type="text" class="username" placeholder="User Name">                   
+                    <input type="text" class="message" placeholder="Messages">
+                    <button type="submit">Send</button>
+                  </form>
+                </div>
+                    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+                    <script>
+                      var socket = io.connect( 'http://' + document.domain + ':' + location.port )
+                      socket.on( 'connect', function() {
+                        socket.emit( 'my event', {
+                          data: 'User Connected'
+                        } )
+                        var form = $( 'form' ).on( 'submit', function( e ) {
+                          e.preventDefault()
+                          let user_name = $( 'input.username' ).val()
+                          let user_input = $( 'input.message' ).val()
+                          socket.emit( 'my event', {
+                            user_name : user_name,
+                            message : user_input
+                          } )
+                          $( 'input.message' ).val( '' ).focus()
+                        } )
+                      } )
+                      socket.on( 'my response', function( msg ) {
+                        console.log( msg )
+                        if( typeof msg.user_name !== 'undefined' ) {
+                          $( 'div.message_holder' ).append( '<div><b style="color: #000">'+msg.user_name+'</b> '+msg.message+'</div>' )
+                        }
+                      } )
+                    </script>	
+                </div>					
+			</div>
+		</div>
+	    <div class="profile_sidebar">
+		    <div class="profile_in_sidebar">
+                <img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="259px"/> 
+			</div>
+	    <div class="contact_sidebar">
+		    <div class="contact_in_sidebar">
+				
+			</div>		
+	
+		</div>
+	</div>
+	<div class="footer">
+	    <div class="in_footer">
+               social_network © 2017
+		</div>
+	</div>
+	</div>
+</div>
+
+
