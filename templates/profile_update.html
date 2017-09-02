@@ -14,7 +14,17 @@
 	<div class="row">
 	    <div class="content">
 		    <div class="in_content">
-                {% from "_formhelpers.html" import render_field %}
+                <div>
+				{% if not photo %}
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('user_update') }}">
+                        <input type="file" name="photo">
+                        <input type="submit">
+                    </form></br>
+				{% else %}
+				    <a href='/profile/{{ user.id }}/photo'>Change photo<a>				
+				{% endif %}
+				</div>
+				{% from "_formhelpers.html" import render_field %}
                 <form method=post>
                   <dl>
 				    {{ form.hidden_tag() }}
@@ -24,7 +34,8 @@
                   </dl>
                   <p><input type=submit value=Update>
                 </form>
-				<a href='/profile/extend_profile'>profile<a>
+				<a href='/profile/extend_profile'>profile<a></br>
+				<a href='/profile/{{ user.id }}/delete' style='color:red'>delete profile<a>
 			</div>
 		</div>
 	    <div class="profile_sidebar">

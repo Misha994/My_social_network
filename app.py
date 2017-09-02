@@ -1,10 +1,12 @@
-import os.path
+from os import path, chdir, unlink
+from glob import glob
 
 from flask import Flask, render_template, redirect, url_for, request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_socketio import SocketIO, emit
+from flask.ext.uploads import UploadSet, configure_uploads, IMAGES
 
 from form.loginForm import LoginForm
 from form.registerForm import RegisterForm
@@ -12,9 +14,12 @@ from form.profileForm import ProfileForm
 
 app = Flask(__name__)
 
-basedir = os.path.abspath(os.path.dirname(__file__))
+photos = UploadSet('photos', IMAGES)
+basedir = path.abspath(path.dirname(__file__))
 app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'myApp.sqlite')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + path.join(basedir, 'myApp.sqlite')
+app.config['UPLOADED_PHOTOS_DEST'] = path.join(basedir, 'static/img')
+configure_uploads(app, photos)
 db = SQLAlchemy(app)
 socketio = SocketIO(app)
 login_manager = LoginManager()
@@ -73,6 +78,15 @@ class Contact(db.Model):
         contacts = Contact.query.filter_by(owner_id=owner_id)
         return contacts
 
+class Photo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, nullable=False)
+    filename = db.Column(db.String(300))
+
+class History(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.String(500))
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -106,7 +120,8 @@ def profile():
     users = User.query.all()
     profile = Profile.get_by_user_id(current_user.id)
     contacts = Contact.get(current_user.id)
-    return render_template('profile.html', user=current_user, profile=profile, contacts=contacts, users=users)
+    photo = Photo.query.filter_by(id=current_user.id).first()
+    return render_template('profile.html',user=current_user,profile=profile,contacts=contacts,users=users,photo=photo)
 
 @app.route('/contact')
 @login_required
@@ -133,6 +148,7 @@ def logout():
 def user_update():
     user = User.get_by_id(current_user.id)
     form = RegisterForm()
+    photo = Photo.query.filter_by(id=current_user.id).first()
     if request.method == 'GET':
         form.username.data = user.username
         form.email.data = user.email
@@ -144,7 +160,29 @@ def user_update():
         user.password=hashed_password
         db.session.add(user)
         db.session.commit()
-    return render_template('profile_update.html', form=form)
+    if request.method == 'POST' and 'photo' in request.files:
+        photos.save(request.files['photo'])
+        file = request.files['photo']
+        new_photo = Photo(owner_id=current_user.id, filename=file.filename)
+        db.session.add(new_photo)
+        db.session.commit()
+        return redirect(url_for('profile'))
+    return render_template('profile_update.html', form=form, user=current_user, photo=photo)
+
+@app.route('/profile/<user_id>/photo')
+@login_required
+def change_photo(user_id):
+    photo = Photo.query.filter_by(id=user_id).first()
+    directory = path.join(basedir, 'static/img')
+    chdir(directory)
+    files=glob(photo.filename)
+    for filename in files:
+        unlink(filename)
+    db.session.delete(photo)
+    db.session.commit()
+    return redirect('/profile/update')
+
+
 
 @app.route('/profile/extend_profile', methods=['GET','POST'])
 @login_required
@@ -159,10 +197,12 @@ def extend_profile():
 
 @app.route('/contact/<user_id>')
 @login_required
-def contact_user(user_id):
+def contact_info(user_id):
+    users = User.query.all()
     user = User.get_by_id(user_id)
     profile = Profile.get_by_user_id(user_id)
-    return render_template('profile.html', user=user, profile=profile)
+    contacts = Contact.get(user_id)
+    return render_template('contact_info.html', user=user, profile=profile, contacts=contacts, users=users)
 
 @app.route('/contact/<user_id>/add', methods=['GET'])
 @login_required
@@ -175,7 +215,7 @@ def add_contact(user_id):
 @app.route('/messages')
 @login_required
 def messages():
-    messages = ['fdfdfd','fdfdfd','fdfdfd']
+    messages = History.query.all()
     return render_template('messages.html', user=current_user, messages=messages)
 
 def messageRecived():
@@ -184,6 +224,9 @@ def messageRecived():
 @socketio.on('message')
 def handleMessage(msg):
     print('Message: '+ msg)
+    message = History(message=msg)
+    db.session.add(message)
+    db.session.commit()
     send(msg, boroadcast=true)
 
 @socketio.on( 'my event' )
@@ -191,7 +234,24 @@ def handle_my_custom_event( json ):
     print( 'recived my event: ' + str( json ))
     socketio.emit( 'my response', json, callback=messageRecived )
 
+@app.route('/profile/<user_id>/delete')
+def user_del(user_id):
+    user = User.get_by_id(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    return redirect('/')
+
+@app.route('/contact/<user_id>/delete')
+@login_required
+def contact_del(user_id):
+    contact = Contact.query.filter_by(id=user_id).first()
+    db.session.delete(contact)
+    db.session.commit()
+    return redirect('/profile')
+
+
+
 if __name__ == '__main__':
     db.create_all()
-    socketio.run(app, debug=True)
+    socketio.run(app)
     app.run()
