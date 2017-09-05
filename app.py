@@ -1,4 +1,4 @@
-from os import path, chdir, unlink
+from os import path, chdir, unlink, rename, listdir
 from glob import glob
 
 from flask import Flask, render_template, redirect, url_for, request
@@ -121,13 +121,17 @@ def profile():
     profile = Profile.get_by_user_id(current_user.id)
     contacts = Contact.get(current_user.id)
     photo = Photo.query.filter_by(id=current_user.id).first()
-    return render_template('profile.html',user=current_user,profile=profile,contacts=contacts,users=users,photo=photo)
+    photos = Photo.query.all()
+    return render_template('profile.html',user=current_user,profile=profile,contacts=contacts,users=users,photo=photo,photos=photos)
 
 @app.route('/contact')
 @login_required
 def all_contact():
     all_users = User.query.all()
     contacts = Contact.get(current_user.id)
+    profile = Profile.get_by_user_id(current_user.id)
+    photos = Photo.query.all()
+    photo = Photo.query.filter_by(id=current_user.id).first()
     users = []
     for user in all_users:
         for contact in contacts:
@@ -135,7 +139,7 @@ def all_contact():
                 break
         else:
             users.append(user)
-    return render_template('contact.html', users=users, contacts=contacts)
+    return render_template('contact.html', users=users, contacts=contacts,photos=photos,photo=photo,profile=profile,user=current_user)
 
 @app.route('/logout')
 @login_required
@@ -143,10 +147,11 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-@app.route('/profile/update', methods=['GET', 'POST'])
+@app.route('/update', methods=['GET', 'POST'])
 @login_required
 def user_update():
     user = User.get_by_id(current_user.id)
+    profile = Profile.get_by_user_id(current_user.id)
     form = RegisterForm()
     photo = Photo.query.filter_by(id=current_user.id).first()
     if request.method == 'GET':
@@ -161,13 +166,20 @@ def user_update():
         db.session.add(user)
         db.session.commit()
     if request.method == 'POST' and 'photo' in request.files:
-        photos.save(request.files['photo'])
-        file = request.files['photo']
-        new_photo = Photo(owner_id=current_user.id, filename=file.filename)
-        db.session.add(new_photo)
-        db.session.commit()
-        return redirect(url_for('profile'))
-    return render_template('profile_update.html', form=form, user=current_user, photo=photo)
+        filename = photos.save(request.files['photo'])
+        directory = path.join(basedir, 'static/img')
+        chdir(directory)
+        for f in listdir():
+            if f == filename:
+                f_name, f_ext = path.splitext(f)
+                f_name = str(current_user.id)
+                new_name = '{}{}'.format(f_name,f_ext)
+                rename(f,new_name)
+                new_photo = Photo(owner_id=current_user.id, filename=new_name)
+                db.session.add(new_photo)
+                db.session.commit()
+                return redirect(url_for('profile'))
+    return render_template('profile_update.html', form=form, user=current_user, photo=photo, profile=profile)
 
 @app.route('/profile/<user_id>/photo')
 @login_required
@@ -180,29 +192,33 @@ def change_photo(user_id):
         unlink(filename)
     db.session.delete(photo)
     db.session.commit()
-    return redirect('/profile/update')
+    return redirect('/update')
 
 
 
-@app.route('/profile/extend_profile', methods=['GET','POST'])
+@app.route('/extend_profile', methods=['GET','POST'])
 @login_required
 def extend_profile():
     form = ProfileForm()
+    profile = Profile.get_by_user_id(current_user.id)
+    photo = Photo.query.filter_by(id=current_user.id).first()
     if request.method == 'POST' and form.validate_on_submit():
-        profile = Profile(user_id=current_user.id, city=form.city.data)
-        db.session.add(profile)
+        add_profile = Profile(user_id=current_user.id, city=form.city.data)
+        db.session.add(add_profile)
         db.session.commit()
         return redirect(url_for('profile'))
-    return render_template('extend_profile.html', form=form)
+    return render_template('extend_profile.html', form=form, photo=photo, profile=profile, user=current_user)
 
-@app.route('/contact/<user_id>')
+@app.route('/<user_id>')
 @login_required
 def contact_info(user_id):
     users = User.query.all()
     user = User.get_by_id(user_id)
+    photo = Photo.query.filter_by(id=user_id).first()
+    photos = Photo.query.all()
     profile = Profile.get_by_user_id(user_id)
     contacts = Contact.get(user_id)
-    return render_template('contact_info.html', user=user, profile=profile, contacts=contacts, users=users)
+    return render_template('contact_info.html', user=user, profile=profile, contacts=contacts, users=users, photos=photos, photo=photo)
 
 @app.route('/contact/<user_id>/add', methods=['GET'])
 @login_required
@@ -215,8 +231,10 @@ def add_contact(user_id):
 @app.route('/messages')
 @login_required
 def messages():
+    profile = Profile.get_by_user_id(current_user.id)
+    photo = Photo.query.filter_by(id=current_user.id).first()
     messages = History.query.all()
-    return render_template('messages.html', user=current_user, messages=messages)
+    return render_template('messages.html', user=current_user, messages=messages,profile=profile,photo=photo)
 
 def messageRecived():
   print( 'message was received!!!' )

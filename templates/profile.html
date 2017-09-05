@@ -19,27 +19,38 @@
 		</div>
 	    <div class="profile_sidebar">
 		    <div class="profile_in_sidebar">
-              
 				<img src="static/img/{{ photo.filename }}" alt="img" width="268px"/>    
-
 				{{ user.username }}</br>
 				{{ profile.city }}</br>
-			    <a href='/profile/update'>update<a></br>
+			    <a href='/update'>update<a></br>
 			</div>
 	    <div class="contact_sidebar">
 		    <div class="contact_in_sidebar">
 			    Friends</br>
+				<table >
+				
 				{% for contact in contacts %}
 				{% for user in users %}
 				{% if user.id == contact.user_id %}
-                    <a href='/contact/{{ contact.user_id }}'>
-					{{ user.username }}</br>
-                    <img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="90px"/></br>
-					<a href='/contact/{{ contact.id }}/delete' style='color:red'>delete contact<a></br>
-					</a>
-				{% endif %}
-				{% endfor %}	
+				    
+					<tr>
+				    {% for photo in photos %}
+				    {% if photo.owner_id == user.id %}
+				    <td>
+                        <a href='/{{ contact.user_id }}'>
+				    	{{ user.username }}</br>
+                        <img src='static/img/{{ photo.filename }}' width='90px'/></br>
+				    	<a href='/contact/{{ contact.id }}/delete' style='color:red'>Delete contact<a></br>
+				    	</a>
+					</td>
+				    {% endif %}
+				    {% endfor %}
+					</tr>
+					
+				{% endif %}	
                 {% endfor %}			
+				{% endfor %}		        
+                </table>				
 			</div>		
 	
 		</div>

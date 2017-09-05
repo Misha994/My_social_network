@@ -34,14 +34,15 @@
                   </dl>
                   <p><input type=submit value=Update>
                 </form>
-				<a href='/profile/extend_profile'>profile<a></br>
+				<a href='/extend_profile'>Extend profile<a></br>
 				<a href='/profile/{{ user.id }}/delete' style='color:red'>delete profile<a>
 			</div>
 		</div>
 	    <div class="profile_sidebar">
 		    <div class="profile_in_sidebar">
-				<img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="259px"/>    
-
+				<img src='static/img/{{ photo.filename }}' alt="img" width="268px"/>    
+				{{ user.username }}</br>
+				{{ profile.city }}</br>
 			</div>
 		</div>
 	</div>

@@ -19,7 +19,7 @@
 		</div>
 	    <div class="profile_sidebar">
 		    <div class="profile_in_sidebar">
-				<img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="259px"/>    
+				<img src="static/img/{{ photo.filename }}" alt="img" width="268px"/>    
 				{{ user.username }}</br>
 				{{ profile.city }}</br>
 			</div>
@@ -29,9 +29,14 @@
 				{% for contact in contacts %}
 				{% for user in users %}
 				{% if user.id == contact.user_id %}
-                    <a href='/contact/{{ contact.user_id }}'>
+                    <a href='/{{ contact.user_id }}'>
 					{{ user.username }}</br>
-                    <img src="https://www.sololearn.com/Icons/Courses/1073.png" alt="img" width="90px"/></br>
+					{% for photo in photos %}
+					{% if photo.owner_id == user.id %}
+                    <img src='static/img/{{ photo.filename }}' width='90px'/></br>
+   					{% endif %}
+					{% endfor %}
+					<a href='/contact/{{ contact.id }}/delete' style='color:red'>delete contact<a></br>
 					</a>
 				{% endif %}
 				{% endfor %}	
