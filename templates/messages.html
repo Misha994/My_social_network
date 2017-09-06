@@ -22,7 +22,10 @@
 			<div class="container">
           <div class="message_holder"></div>
                 <div class="col-sm-4">
-                  <form action="" method="POST">                    
+				  	{% for msg in messages %}
+					       <b>{{ msg.owner }}</b>: {{ msg.message }}</br>
+					{% endfor %}
+                  <form action="" method="POST">				  
                     <div class="clearfix"></div>                   
                     <input type="text" class="message" placeholder="Messages">
                     <button type="submit">Send</button>
@@ -33,9 +36,6 @@
                     <script>
                       var socket = io.connect( 'http://' + document.domain + ':' + location.port )
                       socket.on( 'connect', function() {
-                        socket.emit( 'my event', {
-                          data: 'User Connected'
-                        } )
                         var form = $( 'form' ).on( 'submit', function( e ) {
                           e.preventDefault()
                           var user_name = '{{ user.username }}'
@@ -48,11 +48,8 @@
                         } )
                       } )
                       socket.on( 'my response', function( msg ) {
-                        console.log( msg )
-                        if( typeof msg.user_name !== 'undefined' ) {
                           $( 'div.message_holder' ).append( '<div><b style="color: #000">'+msg.user_name+'</b>: '+msg.message+'</div>' )
-                        }
-                      } )
+					  } )
                     </script>	
                 </div>					
 			</div>

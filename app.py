@@ -1,12 +1,13 @@
 from os import path, chdir, unlink, rename, listdir
 from glob import glob
 
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_socketio import SocketIO, emit
 from flask.ext.uploads import UploadSet, configure_uploads, IMAGES
+from ast import literal_eval
 
 from form.loginForm import LoginForm
 from form.registerForm import RegisterForm
@@ -86,6 +87,7 @@ class Photo(db.Model):
 class History(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     message = db.Column(db.String(500))
+    owner = db.Column(db.String(100))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -120,7 +122,7 @@ def profile():
     users = User.query.all()
     profile = Profile.get_by_user_id(current_user.id)
     contacts = Contact.get(current_user.id)
-    photo = Photo.query.filter_by(id=current_user.id).first()
+    photo = Photo.query.filter_by(owner_id=current_user.id).first()
     photos = Photo.query.all()
     return render_template('profile.html',user=current_user,profile=profile,contacts=contacts,users=users,photo=photo,photos=photos)
 
@@ -131,7 +133,7 @@ def all_contact():
     contacts = Contact.get(current_user.id)
     profile = Profile.get_by_user_id(current_user.id)
     photos = Photo.query.all()
-    photo = Photo.query.filter_by(id=current_user.id).first()
+    photo = Photo.query.filter_by(owner_id=current_user.id).first()
     users = []
     for user in all_users:
         for contact in contacts:
@@ -153,7 +155,7 @@ def user_update():
     user = User.get_by_id(current_user.id)
     profile = Profile.get_by_user_id(current_user.id)
     form = RegisterForm()
-    photo = Photo.query.filter_by(id=current_user.id).first()
+    photo = Photo.query.filter_by(owner_id=current_user.id).first()
     if request.method == 'GET':
         form.username.data = user.username
         form.email.data = user.email
@@ -184,7 +186,7 @@ def user_update():
 @app.route('/profile/<user_id>/photo')
 @login_required
 def change_photo(user_id):
-    photo = Photo.query.filter_by(id=user_id).first()
+    photo = Photo.query.filter_by(owner_id=user_id).first()
     directory = path.join(basedir, 'static/img')
     chdir(directory)
     files=glob(photo.filename)
@@ -194,14 +196,12 @@ def change_photo(user_id):
     db.session.commit()
     return redirect('/update')
 
-
-
 @app.route('/extend_profile', methods=['GET','POST'])
 @login_required
 def extend_profile():
     form = ProfileForm()
     profile = Profile.get_by_user_id(current_user.id)
-    photo = Photo.query.filter_by(id=current_user.id).first()
+    photo = Photo.query.filter_by(owner_id=current_user.id).first()
     if request.method == 'POST' and form.validate_on_submit():
         add_profile = Profile(user_id=current_user.id, city=form.city.data)
         db.session.add(add_profile)
@@ -214,7 +214,7 @@ def extend_profile():
 def contact_info(user_id):
     users = User.query.all()
     user = User.get_by_id(user_id)
-    photo = Photo.query.filter_by(id=user_id).first()
+    photo = Photo.query.filter_by(owner_id=user_id).first()
     photos = Photo.query.all()
     profile = Profile.get_by_user_id(user_id)
     contacts = Contact.get(user_id)
@@ -228,29 +228,23 @@ def add_contact(user_id):
     db.session.commit()
     return redirect('profile')
 
+@socketio.on('my event')
+def handle_my_custom_event(json):
+    json_message = literal_eval(str(json))
+    massage = History(message=json_message["message"], owner=current_user.username)
+    db.session.add(massage)
+    db.session.commit()
+    socketio.emit('my response', json)
+
 @app.route('/messages')
 @login_required
 def messages():
     profile = Profile.get_by_user_id(current_user.id)
-    photo = Photo.query.filter_by(id=current_user.id).first()
     messages = History.query.all()
+    messages.reverse()
+    photo = Photo.query.filter_by(owner_id=current_user.id).first()
     return render_template('messages.html', user=current_user, messages=messages,profile=profile,photo=photo)
 
-def messageRecived():
-  print( 'message was received!!!' )
-
-@socketio.on('message')
-def handleMessage(msg):
-    print('Message: '+ msg)
-    message = History(message=msg)
-    db.session.add(message)
-    db.session.commit()
-    send(msg, boroadcast=true)
-
-@socketio.on( 'my event' )
-def handle_my_custom_event( json ):
-    print( 'recived my event: ' + str( json ))
-    socketio.emit( 'my response', json, callback=messageRecived )
 
 @app.route('/profile/<user_id>/delete')
 def user_del(user_id):

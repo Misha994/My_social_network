@@ -1,4 +1,4 @@
-﻿<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/style.css">
 <div class="wrapper">
     <div class='head'></div>
 	<div class="all_content">
@@ -27,30 +27,27 @@
 	    <div class="contact_sidebar">
 		    <div class="contact_in_sidebar">
 			    Friends</br>
-				<table >
-				
+            <table>	
 				{% for contact in contacts %}
+				<tr>						
 				{% for user in users %}
 				{% if user.id == contact.user_id %}
-				    
-					<tr>
-				    {% for photo in photos %}
-				    {% if photo.owner_id == user.id %}
-				    <td>
-                        <a href='/{{ contact.user_id }}'>
-				    	{{ user.username }}</br>
-                        <img src='static/img/{{ photo.filename }}' width='90px'/></br>
-				    	<a href='/contact/{{ contact.id }}/delete' style='color:red'>Delete contact<a></br>
-				    	</a>
-					</td>
-				    {% endif %}
-				    {% endfor %}
-					</tr>
-					
-				{% endif %}	
-                {% endfor %}			
-				{% endfor %}		        
-                </table>				
+				<td>
+                    <a href='/{{ contact.user_id }}'>
+					{{ user.username }}</br>
+					{% for photo in photos %}
+					{% if photo.owner_id == user.id %}
+                    <img src='static/img/{{ photo.filename }}' width='90px'/></br>
+   					{% endif %}
+					{% endfor %}
+					<a href='/contact/{{ contact.id }}/delete' style='color:red'>delete contact<a></br>
+					</a>
+				</td>
+				{% endif %}
+                {% endfor %}				
+                </tr>
+                {% endfor %}
+			</table>
 			</div>		
 	
 		</div>
