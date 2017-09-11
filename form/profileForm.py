@@ -1,6 +1,12 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField
-from wtforms.validators import InputRequired, Email, Length
+from wtforms import StringField, PasswordField, BooleanField, SelectField
+from wtforms.fields.html5 import DateField
+from wtforms.validators import Optional, Length
 
 class ProfileForm(FlaskForm):
-    city = StringField('city', validators=[InputRequired(), Length(min=2, max=20)])
+    bday = DateField('Bday', validators=[Optional()], format='%Y-%m-%d')
+    sex = SelectField('Sex', validators=[Optional()], choices=[('Male', 'Male'), ('Female', 'Female')])
+    city = StringField('Сity', validators=[Optional(), Length(min=2, max=20)])
+
+class ProfileFormDate(FlaskForm):
+    bday = DateField('Bday', validators=[Optional()], format='%Y-%m-%d')

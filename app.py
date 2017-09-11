@@ -10,14 +10,14 @@ from flask.ext.uploads import UploadSet, configure_uploads, IMAGES
 from ast import literal_eval
 
 from form.loginForm import LoginForm
-from form.registerForm import RegisterForm
-from form.profileForm import ProfileForm
+from form.registerForm import RegisterForm, UpdateForm, UpdatePasswordForm
+from form.profileForm import ProfileForm, ProfileFormDate
 
 app = Flask(__name__)
 
 photos = UploadSet('photos', IMAGES)
 basedir = path.abspath(path.dirname(__file__))
-app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
+app.config['SECRET_KEY'] = 'Secret_key!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + path.join(basedir, 'myApp.sqlite')
 app.config['UPLOADED_PHOTOS_DEST'] = path.join(basedir, 'static/img')
 configure_uploads(app, photos)
@@ -44,6 +44,8 @@ class User(db.Model, UserMixin):
 class Profile(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
+    bday = db.Column(db.Integer, nullable=True)
+    sex = db.Column(db.String(20), nullable=False)
     city = db.Column(db.String(20), unique=False)
 
     @staticmethod
@@ -141,7 +143,17 @@ def all_contact():
                 break
         else:
             users.append(user)
-    return render_template('contact.html', users=users, contacts=contacts,photos=photos,photo=photo,profile=profile,user=current_user)
+    return render_template('contact.html',users=users,contacts=contacts,photos=photos,photo=photo,profile=profile,user=current_user)
+
+@app.route('/friends')
+@login_required
+def friends():
+    users = User.query.all()
+    profile = Profile.get_by_user_id(current_user.id)
+    contacts = Contact.get(current_user.id)
+    photo = Photo.query.filter_by(owner_id=current_user.id).first()
+    photos = Photo.query.all()
+    return render_template('friends.html',user=current_user,profile=profile,contacts=contacts,users=users,photo=photo,photos=photos)
 
 @app.route('/logout')
 @login_required
@@ -154,15 +166,19 @@ def logout():
 def user_update():
     user = User.get_by_id(current_user.id)
     profile = Profile.get_by_user_id(current_user.id)
-    form = RegisterForm()
+    update_form = UpdateForm()
+    update_Password = UpdatePasswordForm()
     photo = Photo.query.filter_by(owner_id=current_user.id).first()
+    form = RegisterForm()
     if request.method == 'GET':
         form.username.data = user.username
         form.email.data = user.email
-        form.password.data = user.password
-    if request.method == 'POST' and form.validate_on_submit():
+    if request.method == 'POST' and update_form.validate_on_submit():
         user.username=form.username.data
         user.email=form.email.data
+        db.session.add(user)
+        db.session.commit()
+    if request.method == 'POST' and update_Password.validate_on_submit():
         hashed_password = generate_password_hash(form.password.data, method='sha256')
         user.password=hashed_password
         db.session.add(user)
@@ -200,10 +216,37 @@ def change_photo(user_id):
 @login_required
 def extend_profile():
     form = ProfileForm()
+    form_Date = ProfileFormDate()
     profile = Profile.get_by_user_id(current_user.id)
     photo = Photo.query.filter_by(owner_id=current_user.id).first()
-    if request.method == 'POST' and form.validate_on_submit():
-        add_profile = Profile(user_id=current_user.id, city=form.city.data)
+    if request.method == 'GET' and profile:
+        form.sex.data = profile.sex
+        form.city.data = profile.city
+    if request.method == 'POST' and form.validate_on_submit() and profile:
+        profile.sex = form.sex.data
+        profile.city = form.city.data
+        db.session.add(profile)
+        db.session.commit()
+        return redirect(url_for('profile'))
+    if request.method == 'POST' and form_Date.validate_on_submit() and profile:
+        if form_Date.validate_on_submit():
+            profile.bday = form.bday.data
+            db.session.add(profile)
+            db.session.commit()
+            return redirect(url_for('profile'))
+    if request.method == 'POST' and form.validate_on_submit() and not profile:
+        add_profile = Profile(user_id=current_user.id,
+                              bday=form.bday.data,
+                              sex=form.sex.data,
+                              city=form.city.data)
+        db.session.add(add_profile)
+        db.session.commit()
+        return redirect(url_for('profile'))
+    if request.method == 'POST' and form.validate_on_submit() and profile:
+        add_profile = Profile(user_id=current_user.id,
+                              bday=form.bday.data,
+                              sex=form.sex.data,
+                              city=form.city.data)
         db.session.add(add_profile)
         db.session.commit()
         return redirect(url_for('profile'))
@@ -249,6 +292,14 @@ def messages():
 @app.route('/profile/<user_id>/delete')
 def user_del(user_id):
     user = User.get_by_id(user_id)
+    contact = Contact.query.filter_by(id=user_id).first()
+    profile = Profile.get_by_user_id(current_user.id)
+    if profile:
+        db.session.delete(profile)
+        db.session.commit()
+    if contact:
+        db.session.delete(contact)
+        db.session.commit()
     db.session.delete(user)
     db.session.commit()
     return redirect('/')

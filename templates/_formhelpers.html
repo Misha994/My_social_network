@@ -9,3 +9,21 @@
     </ul>
   {% endif %}
 {% endmacro %}
+
+{% macro render_friends(contacts,users,photos) %}
+				{% for contact in contacts %}			
+				{% for user in users %}				
+				{% if user.id == contact.user_id %}
+       				<a href='/{{ contact.user_id }}'>
+					{{ user.username }}</br>
+					{% for photo in photos %}
+					{% if photo.owner_id == user.id %}
+                    <img src='static/img/{{ photo.filename }}' width='90px'/></br>
+   					{% endif %}
+					{% endfor %}
+					<a href='/contact/{{ contact.id }}/delete' style='color:red'>delete contact<a></br>
+					</a>
+				{% endif %}				
+                {% endfor %}				
+				{% endfor %}
+{% endmacro %}

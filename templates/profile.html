@@ -21,33 +21,16 @@
 		    <div class="profile_in_sidebar">
 				<img src="static/img/{{ photo.filename }}" alt="img" width="268px"/>    
 				{{ user.username }}</br>
-				{{ profile.city }}</br>
+				Birthday: {{ profile.bday }}</br>
+				Сity: {{ profile.city }}</br>
+				{{ profile.sex }}</br>
 			    <a href='/update'>update<a></br>
 			</div>
 	    <div class="contact_sidebar">
 		    <div class="contact_in_sidebar">
-			    Friends</br>
-            <table>	
-				{% for contact in contacts %}
-				<tr>						
-				{% for user in users %}
-				{% if user.id == contact.user_id %}
-				<td>
-                    <a href='/{{ contact.user_id }}'>
-					{{ user.username }}</br>
-					{% for photo in photos %}
-					{% if photo.owner_id == user.id %}
-                    <img src='static/img/{{ photo.filename }}' width='90px'/></br>
-   					{% endif %}
-					{% endfor %}
-					<a href='/contact/{{ contact.id }}/delete' style='color:red'>delete contact<a></br>
-					</a>
-				</td>
-				{% endif %}
-                {% endfor %}				
-                </tr>
-                {% endfor %}
-			</table>
+			    <a href='/friends'>Friends</a></br>
+               {% from "_formhelpers.html" import render_friends %}
+			   {{ render_friends(contacts,users,photos) }}
 			</div>		
 	
 		</div>

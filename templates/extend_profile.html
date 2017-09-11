@@ -14,14 +14,18 @@
 	<div class="row">
 	    <div class="content">
 		    <div class="in_content">
+
             {% from "_formhelpers.html" import render_field %}
             <form method=post>
               <dl>
 			    {{ form.hidden_tag() }}
-                {{ render_field(form.city) }}
+                {{ render_field(form.bday) }}</br>
+                {{ render_field(form.sex) }}</br>
+                {{ render_field(form.city) }}</br>
               </dl>
-              <p><input type=submit value=add></p>               
+              <p><input type=submit value=update></p>
 			</form>
+            
 			</div>
 		</div>
 	    <div class="profile_sidebar">
