@@ -1,0 +1,79 @@
+<link rel="stylesheet" href="/static/css/style.css">
+<div class="wrapper">
+    <div class='head'></div>
+	<div class="all_content">
+	    <div class="header">
+	        <div class="in_header">
+	    	    <a href="/profile">my site</a>
+				<a href="/profile">home</a>
+				<a href="/contact">contact</a>
+				<a href="/messages">messages</a>
+				<a href="/musices">music</a>
+				<a href="/logout">Exit</a>
+	    	</div>
+	    </div>	
+	<div class="row">
+	    <div class="content">
+		    <div class="in_content">
+                <h2>Music</h2>
+                <audio controls="controls" autoplay="autoplay" id="audioPlayer"></audio>
+				<ul id="playlist">
+				{% for mus in musices %}
+				{% if mus.owner_id == user.id %}
+	                <li><a href="static/music/{{ user.id }}/{{ mus.filename }}">{{ mus.filename }}</a><a> add</a></li>
+				{% endif %}
+				{% endfor %}
+				</ul>
+                <script src="https://code.jquery.com/jquery-2.2.0.js"></script>
+			    <script>
+				    audioPlayer();
+					function audioPlayer(){
+					    $("#audioPlayer")[0].src = $("#playlist li a")[0];
+						$("#audioPlayer")[0].play();
+						$("#playlist li a").click(function(e){
+						    e.preventDefault();
+							$("#audioPlayer")[0].src = this;
+						});
+					}
+				</script>              
+			</div>
+		</div>
+	    <div class="profile_sidebar">
+		    <div class="profile_in_sidebar">
+				<img src="static/img/{{ photo.filename }}" alt="img" width="268px"/>    
+				{{ user.username }}</br>
+				Birthday: {{ profile.bday }}</br>
+				Сity: {{ profile.city }}</br>
+				{{ profile.sex }}</br>
+				<a href="/{{ user.id }}music">music</a>
+			</div>
+	    <div class="contact_sidebar">
+		    <div class="contact_in_sidebar">
+			    Friends</br>
+				{% for contact in contacts %}
+				{% for user in users %}
+				{% if user.id == contact.user_id %}
+                    <a href='/{{ contact.user_id }}'>
+					{{ user.username }}</br>
+					{% for photo in photos %}
+					{% if photo.owner_id == user.id %}
+                    <img src='static/img/{{ photo.filename }}' width='90px'/></br>
+   					{% endif %}
+					{% endfor %}
+					</a>
+				{% endif %}
+				{% endfor %}	
+                {% endfor %}			
+			</div>		
+	
+		</div>
+	</div>
+	<div class="footer">
+	    <div class="in_footer">
+               social_network © 2017
+		</div>
+	</div>
+	</div>
+</div>
+
+

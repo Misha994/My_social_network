@@ -8,6 +8,7 @@
 				<a href="/profile">home</a>
 				<a href="/contact">contact</a>
 				<a href="/messages">messages</a>
+				<a href="/musices">music</a>
 				<a href="/logout">Exit</a>
 	    	</div>
 	    </div>	
@@ -21,7 +22,10 @@
 		    <div class="profile_in_sidebar">
 				<img src="static/img/{{ photo.filename }}" alt="img" width="268px"/>    
 				{{ user.username }}</br>
-				{{ profile.city }}</br>
+				Birthday: {{ profile.bday }}</br>
+				Сity: {{ profile.city }}</br>
+				{{ profile.sex }}</br>
+				<a href="/{{ user.id }}music">music</a>
 			</div>
 	    <div class="contact_sidebar">
 		    <div class="contact_in_sidebar">

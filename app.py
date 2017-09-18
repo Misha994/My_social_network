@@ -1,13 +1,15 @@
-from os import path, chdir, unlink, rename, listdir
+from os import path, chdir, unlink, rename, listdir, makedirs
 from glob import glob
+from random import randint
 
 from flask import Flask, render_template, redirect, url_for, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_socketio import SocketIO, emit
-from flask.ext.uploads import UploadSet, configure_uploads, IMAGES
+from flask.ext.uploads import UploadSet, configure_uploads, IMAGES, AUDIO
 from ast import literal_eval
+
 
 from form.loginForm import LoginForm
 from form.registerForm import RegisterForm, UpdateForm, UpdatePasswordForm
@@ -16,11 +18,13 @@ from form.profileForm import ProfileForm, ProfileFormDate
 app = Flask(__name__)
 
 photos = UploadSet('photos', IMAGES)
+musices = UploadSet('musices', AUDIO)
 basedir = path.abspath(path.dirname(__file__))
 app.config['SECRET_KEY'] = 'Secret_key!'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + path.join(basedir, 'myApp.sqlite')
 app.config['UPLOADED_PHOTOS_DEST'] = path.join(basedir, 'static/img')
-configure_uploads(app, photos)
+app.config['UPLOADED_MUSICES_DEST'] = path.join(basedir, 'static/music')
+configure_uploads(app, (photos,musices))
 db = SQLAlchemy(app)
 socketio = SocketIO(app)
 login_manager = LoginManager()
@@ -82,6 +86,11 @@ class Contact(db.Model):
         return contacts
 
 class Photo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, nullable=False)
+    filename = db.Column(db.String(300))
+
+class Music(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, nullable=False)
     filename = db.Column(db.String(300))
@@ -227,22 +236,11 @@ def extend_profile():
         profile.city = form.city.data
         db.session.add(profile)
         db.session.commit()
-        return redirect(url_for('profile'))
     if request.method == 'POST' and form_Date.validate_on_submit() and profile:
-        if form_Date.validate_on_submit():
-            profile.bday = form.bday.data
-            db.session.add(profile)
-            db.session.commit()
-            return redirect(url_for('profile'))
-    if request.method == 'POST' and form.validate_on_submit() and not profile:
-        add_profile = Profile(user_id=current_user.id,
-                              bday=form.bday.data,
-                              sex=form.sex.data,
-                              city=form.city.data)
-        db.session.add(add_profile)
+        profile.bday = form.bday.data
+        db.session.add(profile)
         db.session.commit()
-        return redirect(url_for('profile'))
-    if request.method == 'POST' and form.validate_on_submit() and profile:
+    if request.method == 'POST' and form.validate_on_submit() and not profile:
         add_profile = Profile(user_id=current_user.id,
                               bday=form.bday.data,
                               sex=form.sex.data,
@@ -312,7 +310,71 @@ def contact_del(user_id):
     db.session.commit()
     return redirect('/profile')
 
+@app.route('/musices', methods=['GET', 'POST'])
+@login_required
+def music():
+    users = User.query.all()
+    profile = Profile.get_by_user_id(current_user.id)
+    contacts = Contact.get(current_user.id)
+    photo = Photo.query.filter_by(owner_id=current_user.id).first()
+    photos = Photo.query.all()
+    all_musices = Music.query.all()
+    if request.method == 'POST' and 'music' in request.files:
+        filename = musices.save(request.files['music'])
+        directory = path.join(basedir, 'static/music/')
+        chdir(directory)
+        for f in listdir():
+            if f == filename:
+                if not str(current_user.id) in listdir():
+                    makedirs(str(current_user.id))
+                    prevDir = directory+filename
+                    newDir = directory+str(current_user.id)+'/'+filename
+                    rename(prevDir,newDir)
+                    new_music = Music(owner_id=current_user.id, filename=filename)
+                    db.session.add(new_music)
+                    db.session.commit()
+                    return redirect(url_for('music'))
+                elif filename in listdir(directory+str(current_user.id)):
+                    a = randint(1,10)
+                    prevDir = directory+filename
+                    newDir = directory+str(current_user.id)+'/'+str(a)+filename
+                    rename(prevDir,newDir)
+                    new_music = Music(owner_id=current_user.id, filename=str(a)+filename)
+                    db.session.add(new_music)
+                    db.session.commit()
+                    return redirect(url_for('music'))
+                else:
+                    prevDir = directory+filename
+                    newDir = directory+'/'+str(current_user.id)+'/'+filename
+                    rename(prevDir,newDir)
+                    new_music = Music(owner_id=current_user.id, filename=filename)
+                    db.session.add(new_music)
+                    db.session.commit()
+                    return redirect(url_for('music'))
+    return render_template('musices_list.html',user=current_user,profile=profile,contacts=contacts,users=users,photo=photo,photos=photos,musices=all_musices)
 
+@app.route('/profile/<filename>/music')
+@login_required
+def delete_music(filename):
+    music = Music.query.filter_by(owner_id = current_user.id, filename=filename).first()
+    directory = path.join(basedir, 'static/music/'+ str(current_user.id))
+    chdir(directory)
+    unlink(filename)
+    db.session.delete(music)
+    db.session.commit()
+    return redirect(url_for('music'))
+
+@app.route('/<user_id>music')
+@login_required
+def contact_music(user_id):
+    users = User.query.all()
+    user = User.get_by_id(user_id)
+    photo = Photo.query.filter_by(owner_id=user_id).first()
+    photos = Photo.query.all()
+    profile = Profile.get_by_user_id(user_id)
+    contacts = Contact.get(user_id)
+    musices = Music.query.all()
+    return render_template('contact_music.html', user=user, profile=profile, contacts=contacts, users=users, photos=photos, photo=photo,musices=musices)
 
 if __name__ == '__main__':
     db.create_all()
